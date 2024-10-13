@@ -1,51 +1,90 @@
 {% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .dashboard-container { margin: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { 
+        padding: 12px; 
+        text-align: left; 
+        border-bottom: 1px solid #ddd;
+    }
+    th { background-color: var(--primary); color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+    .rental-details {
+        background-color: #f9f9f9;
+    }
+    .rental-details table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .rental-details th {
+        background-color: #e9e9e9;
+        color: #333;
+    }
+    .rental-details td {
+        padding: 8px;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1>{{ title }}</h1>
+<div class="dashboard-container">
+    <h1>Student Rental Dashboard</h1>
 
-<form method="get">
-    <label for="student_id">Enter Student ID:</label>
-    <input type="text" name="student_id" id="student_id" required>
-    <input type="submit" value="View Dashboard">
-</form>
-
-{% if error %}
-    <p style="color: red;">{{ error }}</p>
-{% endif %}
-
-{% if student %}
-    <h2>Rentals for {{ student.username }}</h2>
     <table>
         <thead>
             <tr>
-                <th>Book Title</th>
-                <th>Rental Date</th>
-                <th>Return Date</th>
-                <th>Status</th>
-                <th>Fee</th>
+                <th>Sr. No.</th>
+                <th>Username</th>
+                <th>Pending Rentals</th>
+                <th>Total Pending Fees</th>
             </tr>
         </thead>
         <tbody>
-            {% for rental in rentals %}
+            {% for student in student_rentals %}
             <tr>
-                <td>{{ rental.book.title }}</td>
-                <td>{{ rental.rental_date }}</td>
-                <td>{{ rental.return_date|default_if_none:"-" }}</td>
-                <td>{% if rental.is_overdue %}Overdue{% else %}On time{% endif %}</td>
-                <td>${{ rental.fee|floatformat:2 }}</td>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ student.username }}</td>
+                <td>{{ student.rentals|length }}</td>
+                <td>${{ student.total_fee }}</td>
             </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5">No rentals found for this student.</td>
+            <tr class="rental-details">
+                <td colspan="4">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Pages</th>
+                                <th>Rental Date</th>
+                                <th>Duration (days)</th>
+                                <th>Pending Fee</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rental in student.rentals %}
+                            <tr>
+                                <td>{{ rental.book.title }}</td>
+                                <td>{{ rental.book.author }}</td>
+                                <td>{{ rental.book.number_of_pages }}</td>
+                                <td>{{ rental.rental_date|date:"Y-m-d" }}</td>
+                                <td>{{ rental.rental_duration }}</td>
+                                <td>${{ rental.pending_fee|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6">No rentals found for this student.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="4"><strong>Total Fee</strong></td>
-                <td><strong>${{ total_fee|floatformat:2 }}</strong></td>
-            </tr>
-        </tfoot>
     </table>
-{% endif %}
+</div>
 {% endblock %}

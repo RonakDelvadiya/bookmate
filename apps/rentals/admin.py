@@ -5,7 +5,8 @@ from django.shortcuts import render
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.decorators import method_decorator
 from .models import Rental
-
+from .serializers import StudentRentalSerializer
+from django.db.models import Prefetch
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
@@ -52,6 +53,7 @@ class RentalAdmin(admin.ModelAdmin):
         ]
         return custom_urls + urls
 
+
     @method_decorator(staff_member_required)
     def student_dashboard_view(self, request):
         context = dict(
@@ -59,15 +61,12 @@ class RentalAdmin(admin.ModelAdmin):
             title="Student Rental Dashboard"
         )
 
-        if 'student_id' in request.GET:
-            student_id = request.GET['student_id']
-            try:
-                student = User.objects.get(id=student_id)
-                rentals = Rental.objects.filter(student=student, returned=False).select_related('book')
-                context['student'] = student
-                context['rentals'] = rentals
-                context['total_fee'] = sum(rental._rental_fee() for rental in rentals)
-            except User.DoesNotExist:
-                context['error'] = "Student not found"
-
+        students = User.objects.prefetch_related(
+            Prefetch('rental_set', 
+                     queryset=Rental.objects.filter(returned=False).select_related('book'),
+                     to_attr='rentals'
+                    )
+        )
+        serializer = StudentRentalSerializer(students, many=True)
+        context['student_rentals'] = serializer.data
         return render(request, 'admin/student_dashboard.html', context)
