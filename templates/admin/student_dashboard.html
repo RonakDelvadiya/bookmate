@@ -1,0 +1,51 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<form method="get">
+    <label for="student_id">Enter Student ID:</label>
+    <input type="text" name="student_id" id="student_id" required>
+    <input type="submit" value="View Dashboard">
+</form>
+
+{% if error %}
+    <p style="color: red;">{{ error }}</p>
+{% endif %}
+
+{% if student %}
+    <h2>Rentals for {{ student.username }}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Book Title</th>
+                <th>Rental Date</th>
+                <th>Return Date</th>
+                <th>Status</th>
+                <th>Fee</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rental in rentals %}
+            <tr>
+                <td>{{ rental.book.title }}</td>
+                <td>{{ rental.rental_date }}</td>
+                <td>{{ rental.return_date|default_if_none:"-" }}</td>
+                <td>{% if rental.is_overdue %}Overdue{% else %}On time{% endif %}</td>
+                <td>${{ rental.fee|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No rentals found for this student.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4"><strong>Total Fee</strong></td>
+                <td><strong>${{ total_fee|floatformat:2 }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+{% endif %}
+{% endblock %}

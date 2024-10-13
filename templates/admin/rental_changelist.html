@@ -1,0 +1,11 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+
+{% block object-tools-items %}
+    {{ block.super }}
+    <li>
+        <a href="{% url 'admin:rental_student_dashboard' %}" class="addlink">
+            {% trans "Student Dashboard" %}
+        </a>
+    </li>
+{% endblock %}
