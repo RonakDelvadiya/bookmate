@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from .load_env_vars import var_settings
 from pathlib import Path
 from os import path
 import sys
@@ -69,7 +70,7 @@ ROOT_URLCONF = 'bookmate.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # This line is important
+        'DIRS': [var_settings.templates_dir],  # This line is important
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

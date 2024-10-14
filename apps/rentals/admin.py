@@ -4,15 +4,33 @@ from django.urls import path, reverse
 from django.shortcuts import render
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.decorators import method_decorator
+from django import forms
+from books.models import Book
 from .models import Rental
 from .serializers import StudentRentalSerializer
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class RentalAdminForm(forms.ModelForm):
+    class Meta:
+        model = Rental
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:  # Editing an existing rental
+            self.fields['book'].queryset = Book.objects.filter(is_active=True).filter(Q(is_rented=False) | Q(id=self.instance.book.pk))
+        else:  # Creating a new rental
+            self.fields['book'].queryset = Book.objects.filter(is_rented=False, is_active=True)
+        self.fields['created_by'].queryset = User.objects.filter(is_staff=True, is_active=True)
+        self.fields['last_modified_by'].queryset = User.objects.filter(is_staff=True, is_active=True)
+
+
 @admin.register(Rental)
 class RentalAdmin(admin.ModelAdmin):
+    form = RentalAdminForm
     list_display = ['student', 'get_book_link', 'rental_date', 'return_date', 'returned', 'get_rental_duration', 'get_rental_fee']
     search_fields = ['student__username', 'student__email', 'book__title']
     list_filter = ['rental_date', 'returned']

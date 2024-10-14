@@ -49,7 +49,7 @@
                 <td>{{ forloop.counter }}</td>
                 <td>{{ student.username }}</td>
                 <td>{{ student.rentals|length }}</td>
-                <td>${{ student.total_fee }}</td>
+                <td>${{ student.total_fee|floatformat:2 }}</td>
             </tr>
             <tr class="rental-details">
                 <td colspan="4">
@@ -70,7 +70,7 @@
                                 <td>{{ rental.book.title }}</td>
                                 <td>{{ rental.book.author }}</td>
                                 <td>{{ rental.book.number_of_pages }}</td>
-                                <td>{{ rental.rental_date|date:"Y-m-d" }}</td>
+                                <td>{{ rental.rental_date }}</td>
                                 <td>{{ rental.rental_duration }}</td>
                                 <td>${{ rental.pending_fee|floatformat:2 }}</td>
                             </tr>

@@ -2,14 +2,8 @@ from __future__ import unicode_literals
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 from utils.models import CommonFieldModel, User
-from pydantic import BaseModel, Field
-from django.utils import timezone
-import requests, random
-
-
-class FetchBookDetailsFromOpenLibrary(BaseModel):
-    author: str = Field(default=f"Unknown_{timezone.now().strftime('%Y_%m_%d_%H_%M_%S')}")
-    number_of_pages: int = Field(default_factory=lambda: random.randint(1, 500), alias="number of pages of given book")
+import requests
+from .utils import FetchBookDetailsFromIsbndb, fetch_book_details_from_isbndb
 
 
 class Book(CommonFieldModel):
@@ -48,28 +42,18 @@ class Book(CommonFieldModel):
     title = models.CharField(max_length=255, blank=False, null=False, unique=True, help_text=_("The title of the book. Must be unique."))
     author = models.CharField(max_length=255, null=True, blank=True, help_text=_("The author of the book. Can be left blank."))
     number_of_pages = models.PositiveIntegerField(null=True, blank=True, help_text=_("The number of pages in the book. Can be left blank."))
+    is_rented = models.BooleanField(default=False, help_text=_("Whether the book is rented or not."))
     created_by = models.ForeignKey(User, related_name='book_created_by', on_delete=models.SET_NULL, null=True, blank=True, help_text=_("The user who created this book record."))
     last_modified_by = models.ForeignKey(User, related_name='book_modified_by', on_delete=models.SET_NULL, null=True, blank=True, help_text=_("The user who last modified this book record."))
 
 
     @classmethod
-    def _fetch_book_details(cls, title):
-        url = f"https://openlibrary.org/search.json?title={title}"
+    def _fetch_book_details(cls, title) -> FetchBookDetailsFromIsbndb :
         try:
-            response = requests.get(url, timeout=1)
-            response.raise_for_status()
-            data = response.json()
-            if data.get('docs'):
-                book_data = data['docs'][0]
-                return FetchBookDetailsFromOpenLibrary(
-                    author=book_data.get('author_name', ['Unknown'])[0],
-                    number_of_pages=book_data.get('number_of_pages', book_data.get('number_of_pages_median', 0))
-                ).model_dump()
+            return fetch_book_details_from_isbndb(title)
         except (requests.RequestException, ValueError, KeyError) as e:
             print(f"Error fetching book details: {e}")
-
-        # Default for any error case
-        return FetchBookDetailsFromOpenLibrary().model_dump()
+        return FetchBookDetailsFromIsbndb()
         
     class Meta:
         db_table = "books_book"
@@ -83,8 +67,9 @@ class Book(CommonFieldModel):
         if not self.author or not self.number_of_pages:
             try:
                 book_details = self._fetch_book_details(self.title)
-                self.author = book_details.get('author') if not self.author else self.author
-                self.number_of_pages = book_details.get('number_of_pages') if not self.number_of_pages else self.number_of_pages
+                self.author = book_details.author if not self.author else self.author
+                self.number_of_pages = book_details.number_of_pages if not self.number_of_pages else self.number_of_pages
+                self.title = f"{self.title} | {book_details.title}"
             except Exception as e:
                 print(f"An error occurred while fetching or processing book details: {e}")
         super(Book, self).save(**kwargs)

@@ -2,10 +2,10 @@ from __future__ import unicode_literals
 from django.utils.translation import gettext_lazy as _
 from books.models import Book
 from utils.models import CommonFieldModel
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from utils.global_vars import FREE_RENTAL_PERIOD
+from bookmate.load_env_vars import var_settings
 from django.core.exceptions import ValidationError
 import math
 
@@ -78,7 +78,7 @@ class Rental(CommonFieldModel):
             Book.DoesNotExist: If the associated book is not found.
         """
         try:
-            free_period = FREE_RENTAL_PERIOD  # Free period in days
+            free_period = var_settings.FREE_RENTAL_PERIOD  # Free period in days
             duration = self._rental_duration()
             if duration > free_period:
                 extra_days = duration - free_period
@@ -100,7 +100,14 @@ class Rental(CommonFieldModel):
             
             if self.return_date > timezone.now():
                 raise ValidationError("Return date cannot be in the future.")
+    
+    @transaction.atomic
+    def delete(self, *args, **kwargs):
+        self.book.is_rented = False # Update the book's is_rented status before deleting the rental
+        self.book.save()        
+        super().delete(*args, **kwargs)
 
+    @transaction.atomic
     def save(self, *args, **kwargs):
         self.clean()
 
@@ -110,8 +117,21 @@ class Rental(CommonFieldModel):
         # Automatically set returned based on the presence and validity of return_date
         if self.return_date and self.return_date <= timezone.now() and self.return_date >= self.rental_date:
             self.returned = True
+            self.book.is_rented = False
+            self.book.save()
         else:
             self.returned = False
+            self.book.is_rented = True
+            self.book.save()
+
+        is_update = self.pk is not None
+        if is_update:
+            original_rental = Rental.objects.get(pk=self.pk)
+            old_book = original_rental.book
+
+            if is_update and old_book != self.book:
+                old_book.is_rented = False
+                old_book.save()
 
         # If this is an update operation, add 'returned' to update_fields
         if update_fields is not None:
