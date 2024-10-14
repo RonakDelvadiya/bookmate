@@ -42,7 +42,6 @@ Ensure the following tools are installed on your machine:
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/RonakDelvadiya/bookmate.git
-   cd bookmate
    ```
    The repository also includes the database.
 
@@ -54,6 +53,7 @@ Ensure the following tools are installed on your machine:
 
 3. **Install dependencies**:
    ```bash
+   cd bookmate
    pip install -r requirements.txt
    ```
 
