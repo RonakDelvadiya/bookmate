@@ -57,20 +57,20 @@ Ensure the following tools are installed on your machine:
    pip install -r requirements.txt
    ```
 
-4. **Create a superuser**:
+4. **Set up environment variables**:
+   - Copy the environment variables from the [project's settings](https://github.com/RonakDelvadiya/bookmate/settings/variables/actions).
+   - Create a `.env` file according to the project structure and add the environment variables.
+
+5. **Create a superuser**:
    Alternatively, you can use the default credentials: `admin/admin`
    ```bash
    python manage.py createsuperuser
    ```
 
-5. **Run the development server**:
+6. **Run the development server**:
    ```bash
    python manage.py runserver
    ```
-
-6. **Set up environment variables**:
-   - Copy the environment variables from the [project's settings](https://github.com/RonakDelvadiya/bookmate/settings/variables/actions).
-   - Create a `.env` file and add the environment variables according to the project structure.
 
 7. **Access the application**:
    Open your browser and navigate to `http://127.0.0.1:8000/`
